@@ -6,6 +6,9 @@ __pycache__/
 # C extensions
 *.so
 
+catboost_info/
+
+
 # Distribution / packaging
 .Python
 build/
@@ -221,3 +224,4 @@ __marimo__/
 catboost_info/test_error.tsv
 catboost_info/learn_error.tsv
 catboost_info/test/events.out.tfevents
+catboost_info/catboost_training.json
