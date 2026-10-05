@@ -82,5 +82,6 @@ df['day_of_week'] = df['date'].dt.dayofweek
 df = df.drop(columns=['date'])
 
 logging.info(f"Extract the date feature.")
-
+df = df.drop(columns=['load_id'])
+logging.info(f"drop load_id feature.")
 df.to_csv('data/cleaned_train-test.csv', index=False)
