@@ -3,7 +3,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import logging
-
+import numpy as np
 df = pd.read_csv("data/train-test.csv")
 
 logging.basicConfig(filename='pipeline.log', level=logging.INFO, 
@@ -79,18 +79,92 @@ df['month'] = df['date'].dt.month
 # Extract the day of the week (returns integers from 0 to 6, where 0=Monday, 6=Sunday)
 df['day_of_week'] = df['date'].dt.dayofweek
 # Drop the original date column
-df = df.drop(columns=['date'])
+# df = df.drop(columns=['date'])
 
 logging.info(f"Extract the date feature.")
 df = df.drop(columns=['load_id'])
-df = df.drop(columns=['day_of_week'])
-df = df.drop(columns=['quote_signal'])
+
+logging.info(f"drop load_id feature.")
+
+
+df.to_csv('data/cleaned_train-test.csv', index=False)
+
+#calculate Haversine distance to chech circuity, circuity=1 -> straight
+def haversine(lat1, lon1, lat2, lon2):
+    R = 3958.8  
+    p1, p2 = np.radians(lat1), np.radians(lat2)
+    dphi = p2 - p1
+    dlmb = np.radians(lon2 - lon1)
+    a = np.sin(dphi/2)**2 + np.cos(p1)*np.cos(p2)*np.sin(dlmb/2)**2
+    return 2 * R * np.arcsin(np.sqrt(a))
+
+
+
+df["hav_dist"] = haversine(df.pickup_lat, df.pickup_lon,
+                           df.delivery_lat, df.delivery_lon)
+df["circuity"] = df["distance"] / df["hav_dist"]
+
+df = df.drop(columns=['month'])
 df = df.drop(columns=['pickup_lat'])
 df = df.drop(columns=['pickup_lon'])
 df = df.drop(columns=['delivery_lat'])
 df = df.drop(columns=['delivery_lon'])
-df = df.drop(columns=['delivery'])
-df = df.drop(columns=['pickup'])
 
-logging.info(f"drop load_id feature.")
-df.to_csv('data/cleaned_train-test.csv', index=False)
+
+# print("========== PICKUP ==========")
+
+# for x in sorted(df["pickup"].dropna().unique()):
+#     print(repr(x))
+
+
+# print("\n========== DELIVERY ==========")
+
+# for x in sorted(df["delivery"].dropna().unique()):
+#     print(repr(x))
+
+# df["pickup_to_delivery"] = (
+#     df["pickup"] + "_to_" + df["delivery"]
+# )
+
+# print("Number of unique lanes:",
+#       df["pickup_to_delivery"].nunique())
+
+
+# lane_counts = df["pickup_to_delivery"].value_counts()
+
+# print("Total lanes:", len(lane_counts))
+# print("Average observations per lane:", lane_counts.mean())
+# print("Median observations per lane:", lane_counts.median())
+# print("Minimum observations per lane:", lane_counts.min())
+# print("Maximum observations per lane:", lane_counts.max())
+
+# print("\nLanes with only 1 observation:",
+#       (lane_counts == 1).sum())
+
+# print("Lanes with <= 5 observations:",
+#       (lane_counts <= 5).sum())
+
+# print("Lanes with > 10 observations:",
+#       (lane_counts > 10).sum())
+
+# df = df.drop(columns=['delivery'])
+# df = df.drop(columns=['pickup'])
+
+print("Number of unique lanes:",
+      df["equipment"].nunique())
+for x in sorted(df["equipment"].dropna().unique()):
+    print(repr(x))
+
+
+print(df[df["weight"] < 0]["weight"].value_counts())
+
+
+df["weight"] = df["weight"].abs()
+print(df[df["weight"] < 0]["weight"].value_counts())
+
+
+
+df['posted_rate'] = np.log1p(df['posted_rate'])
+
+
+df.to_csv('data/featured_train-test.csv', index=False)
