@@ -163,6 +163,8 @@ df["weight"] = df["weight"].abs()
 print(df[df["weight"] < 0]["weight"].value_counts())
 
 
+df["distance"] = np.log1p(df["distance"])    
+df["hav_dist"] = np.log1p(df["hav_dist"]) 
 
 df['posted_rate'] = np.log1p(df['posted_rate'])
 

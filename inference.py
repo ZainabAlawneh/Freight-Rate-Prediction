@@ -11,7 +11,7 @@ print("Model loaded successfully.")
 train_raw = pd.read_csv("data/train-test.csv")
 weight_medians = train_raw.groupby("equipment")["weight"].median()
 
-val = pd.read_csv("data/validation.csv")      # keep original row order
+val = pd.read_csv("data/december_prepared.csv")      # keep original row order
 df = val.copy()
 
 df["weight"] = df["weight"].fillna(df["equipment"].map(weight_medians)).abs()
@@ -35,15 +35,20 @@ X_val = df[model.feature_name_]               # same columns, same order as trai
 print("NaNs per column:\n", X_val.isna().sum())
 
 pred = np.expm1(model.predict(X_val))         # log -> dollars
+if(False):
+    # fill the official template so IDs and order match exactly 
+    template = pd.read_csv("data/validation.csv")
+    template["predicted_rate"] = template["load_id"].map(dict(zip(val["load_id"], pred)))
+    template = template[["load_id", "predicted_rate"]]
 
-# fill the official template so IDs and order match exactly 
-template = pd.read_csv("data/validation.csv")
-template["predicted_rate"] = template["load_id"].map(dict(zip(val["load_id"], pred)))
-template = template[["load_id", "predicted_rate"]]
+    assert len(template) == 12000
+    assert template["predicted_rate"].notna().all()
+    assert (template["predicted_rate"] > 0).all()
 
-assert len(template) == 12000
-assert template["predicted_rate"].notna().all()
-assert (template["predicted_rate"] > 0).all()
-
-template.to_csv("validation_predictions.csv", index=False)
-print(template.describe())
+    template.to_csv("december_predictions.csv", index=False)
+    print(template.describe())
+else:
+    out = pd.read_csv("data/december-chart-inputs.csv")
+    out["predicted_rate"] = pred
+    out.to_csv("data/december-chart-inputs.csv", index=False)
+    print(out)
